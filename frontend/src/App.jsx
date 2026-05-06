@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+
 const defaultFilterState = {
   startYear: 2014,
   endYear: 2026,
@@ -359,7 +361,7 @@ function App() {
 
   useEffect(() => {
     async function loadFilterOptions() {
-      const response = await fetch('http://127.0.0.1:8000/filters')
+      const response = await fetch(`${API_BASE_URL}/filters`)
       const payload = await response.json()
       setAvailableFilters(payload)
       if (payload.years.length) {
@@ -385,11 +387,11 @@ function App() {
       setErrorMessage('')
       try {
         const [kpiResponse, summaryResponse, trendResponse, extremesResponse, forecastResponse] = await Promise.all([
-          fetch(`http://127.0.0.1:8000/kpis?${baseQuery}`),
-          fetch(`http://127.0.0.1:8000/neighborhood-summary?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
-          fetch(`http://127.0.0.1:8000/trend?${baseQuery}`),
-          fetch(`http://127.0.0.1:8000/extremes?${baseQuery}`),
-          fetch(`http://127.0.0.1:8000/forecast?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
+          fetch(`${API_BASE_URL}/kpis?${baseQuery}`),
+          fetch(`${API_BASE_URL}/neighborhood-summary?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
+          fetch(`${API_BASE_URL}/trend?${baseQuery}`),
+          fetch(`${API_BASE_URL}/extremes?${baseQuery}`),
+          fetch(`${API_BASE_URL}/forecast?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
         ])
         const [kpiPayload, summaryPayload, trendPayload, extremesPayload, forecastPayload] = await Promise.all([
           kpiResponse.json(),
@@ -404,7 +406,7 @@ function App() {
         setExtremes(extremesPayload)
         setForecastRows(forecastPayload)
         if (selectedCategory && filters.neighborhoodNumber && selectedCategoryYear) {
-          const categoryTrendResponse = await fetch(`http://127.0.0.1:8000/category-count-trend?category=${encodeURIComponent(selectedCategory)}&start_year=${selectedCategoryYear}&end_year=${selectedCategoryYear}&neighborhood_number=${filters.neighborhoodNumber}`)
+          const categoryTrendResponse = await fetch(`${API_BASE_URL}/category-count-trend?category=${encodeURIComponent(selectedCategory)}&start_year=${selectedCategoryYear}&end_year=${selectedCategoryYear}&neighborhood_number=${filters.neighborhoodNumber}`)
           const categoryTrendPayload = await categoryTrendResponse.json()
           setCategoryTrendRows(categoryTrendPayload)
         } else {
@@ -425,7 +427,7 @@ function App() {
       if (!mapYear) return
       try {
         const mapQuery = mapYear === 'all' ? '' : `?year=${mapYear}`
-        const response = await fetch(`http://127.0.0.1:8000/map-hotspots${mapQuery}`)
+        const response = await fetch(`${API_BASE_URL}/map-hotspots${mapQuery}`)
         const payload = await response.json()
         setMapMonths(payload.months || [])
         setMapRows(payload.rows || [])
