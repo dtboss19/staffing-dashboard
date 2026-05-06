@@ -356,6 +356,97 @@ def forecast(
     )
 
 
+@app.get("/forecast-trend")
+def forecast_trend(
+    start_year: int = Query(2026),
+    end_year: int = Query(2026),
+    neighborhood_number: int | None = Query(default=None),
+) -> list[dict[str, Any]]:
+    forecast_filters = ["f.year BETWEEN ? AND ?"]
+    forecast_params: list[Any] = [start_year, end_year]
+    if neighborhood_number is not None:
+        forecast_filters.append("f.NEIGHBORHOOD_NUMBER = ?")
+        forecast_params.append(neighborhood_number)
+
+    actual_monthly_filters = ["m.year BETWEEN ? AND ?"]
+    actual_monthly_params: list[Any] = [start_year, end_year]
+    if neighborhood_number is not None:
+        actual_monthly_filters.append("m.neighborhood_number = ?")
+        actual_monthly_params.append(neighborhood_number)
+
+    actual_fresh_filters = ["t.year BETWEEN ? AND ?"]
+    actual_fresh_params: list[Any] = [start_year, end_year]
+    if neighborhood_number is not None:
+        actual_fresh_filters.append("t.NEIGHBORHOOD_NUMBER = ?")
+        actual_fresh_params.append(neighborhood_number)
+
+    return run_query(
+        f"""
+        WITH forecast_month AS (
+            SELECT
+                f.month_start,
+                SUM(f.Predict_Crime_Count) AS predicted_total_count
+            FROM forecast_2026_frozen f
+            WHERE {" AND ".join(forecast_filters)}
+            GROUP BY f.month_start
+        ),
+        actual_monthly AS (
+            SELECT
+                m.month_start,
+                m.neighborhood_number,
+                SUM(m.actual_total_count) AS actual_total_count
+            FROM monthly_neighborhood m
+            WHERE {" AND ".join(actual_monthly_filters)}
+            GROUP BY m.month_start, m.neighborhood_number
+        ),
+        actual_fresh AS (
+            SELECT
+                printf('%04d-%02d-01 00:00:00', t.year, t.month) AS month_start,
+                t.NEIGHBORHOOD_NUMBER AS neighborhood_number,
+                SUM(t.actual_total) AS actual_total_count
+            FROM fresh_test_monthly t
+            WHERE {" AND ".join(actual_fresh_filters)}
+            GROUP BY t.year, t.month, t.NEIGHBORHOOD_NUMBER
+        ),
+        actual_combined AS (
+            SELECT
+                af.month_start,
+                af.neighborhood_number,
+                af.actual_total_count
+            FROM actual_fresh af
+            UNION ALL
+            SELECT
+                am.month_start,
+                am.neighborhood_number,
+                am.actual_total_count
+            FROM actual_monthly am
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM actual_fresh af
+                WHERE af.month_start = am.month_start
+                    AND af.neighborhood_number = am.neighborhood_number
+            )
+        ),
+        actual_month AS (
+            SELECT
+                month_start,
+                SUM(actual_total_count) AS actual_total_count
+            FROM actual_combined
+            GROUP BY month_start
+        )
+        SELECT
+            fm.month_start,
+            fm.predicted_total_count,
+            am.actual_total_count
+        FROM forecast_month fm
+        LEFT JOIN actual_month am
+            ON am.month_start = fm.month_start
+        ORDER BY fm.month_start
+        """,
+        tuple(forecast_params + actual_monthly_params + actual_fresh_params),
+    )
+
+
 @app.get("/category-count-trend")
 def category_count_trend(
     category: str = Query(...),

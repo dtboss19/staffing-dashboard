@@ -254,6 +254,13 @@ td {
   stroke-width: 2.7;
 }
 
+.forecast-actual-line {
+  fill: none;
+  stroke: #7c3aed;
+  stroke-width: 2.7;
+  stroke-dasharray: 6 4;
+}
+
 .extreme-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

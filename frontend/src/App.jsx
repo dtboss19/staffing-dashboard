@@ -189,13 +189,26 @@ function ForecastTrendChart({ rows }) {
   const width = 980
   const height = 260
   const padding = 48
-  const values = rows.map((row) => Number(row.predict_crime_count))
+  const values = rows.flatMap((row) => [
+    Number(row.predicted_total_count),
+    row.actual_total_count === null || row.actual_total_count === undefined ? 0 : Number(row.actual_total_count),
+  ])
   const maxValue = Math.max(...values, 1)
   const yTicks = 5
   const stepX = rows.length > 1 ? (width - padding * 2) / (rows.length - 1) : 1
   const toY = (value) => height - padding - (Number(value) / maxValue) * (height - padding * 2)
   const pathData = rows
-    .map((row, index) => `${index === 0 ? 'M' : 'L'} ${padding + index * stepX} ${toY(row.predict_crime_count)}`)
+    .map((row, index) => `${index === 0 ? 'M' : 'L'} ${padding + index * stepX} ${toY(row.predicted_total_count)}`)
+    .join(' ')
+  const actualPathRows = rows
+    .map((row, index) => ({
+      hasActual: row.actual_total_count !== null && row.actual_total_count !== undefined,
+      x: padding + index * stepX,
+      y: row.actual_total_count !== null && row.actual_total_count !== undefined ? toY(row.actual_total_count) : null,
+    }))
+    .filter((row) => row.hasActual)
+  const actualPathData = actualPathRows
+    .map((row, index) => `${index === 0 ? 'M' : 'L'} ${row.x} ${row.y}`)
     .join(' ')
 
   const xTickIndexes = []
@@ -220,7 +233,10 @@ function ForecastTrendChart({ rows }) {
 
   const hoveredRow = hoveredIndex !== null ? rows[hoveredIndex] : null
   const hoveredX = hoveredIndex !== null ? padding + hoveredIndex * stepX : null
-  const hoveredY = hoveredRow ? toY(hoveredRow.predict_crime_count) : null
+  const hoveredPredictedY = hoveredRow ? toY(hoveredRow.predicted_total_count) : null
+  const hoveredActualY = hoveredRow && hoveredRow.actual_total_count !== null && hoveredRow.actual_total_count !== undefined
+    ? toY(hoveredRow.actual_total_count)
+    : null
 
   return (
     <div className="trend-wrapper">
@@ -258,11 +274,13 @@ function ForecastTrendChart({ rows }) {
             </g>
           )
         })}
+        {actualPathData ? <path d={actualPathData} className="forecast-actual-line" /> : null}
         <path d={pathData} className="forecast-line" />
         {hoveredRow ? (
           <g>
             <line x1={hoveredX} y1={padding} x2={hoveredX} y2={height - padding} className="hover-line" />
-            <circle cx={hoveredX} cy={hoveredY} r="4" className="hover-dot forecast-dot" />
+            <circle cx={hoveredX} cy={hoveredPredictedY} r="4" className="hover-dot forecast-dot" />
+            {hoveredActualY !== null ? <circle cx={hoveredX} cy={hoveredActualY} r="4" className="hover-dot actual-dot" /> : null}
           </g>
         ) : null}
         <text x={padding} y={16} className="chart-title">Forecasted Crime Count Trend</text>
@@ -270,10 +288,12 @@ function ForecastTrendChart({ rows }) {
       {hoveredRow ? (
         <div className="chart-tooltip">
           <div>{formatDateLabel(hoveredRow.month_start)}</div>
-          <div>Predicted: {formatNumber(hoveredRow.predict_crime_count, 2)}</div>
+          <div>Predicted: {formatNumber(hoveredRow.predicted_total_count, 2)}</div>
+          <div>Actual: {hoveredRow.actual_total_count !== null && hoveredRow.actual_total_count !== undefined ? formatNumber(hoveredRow.actual_total_count, 2) : 'N/A'}</div>
         </div>
       ) : null}
       <div className="trend-legend">
+        <span><i className="legend-dot actual" /> Actual Total Count</span>
         <span><i className="legend-dot forecast" /> Predicted Crime Count</span>
       </div>
     </div>
@@ -349,6 +369,7 @@ function App() {
   const [categoryTrendRows, setCategoryTrendRows] = useState([])
   const [extremes, setExtremes] = useState(null)
   const [forecastRows, setForecastRows] = useState([])
+  const [forecastTrendRows, setForecastTrendRows] = useState([])
   const [mapYear, setMapYear] = useState('all')
   const [mapMonths, setMapMonths] = useState([])
   const [mapRows, setMapRows] = useState([])
@@ -386,25 +407,28 @@ function App() {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const [kpiResponse, summaryResponse, trendResponse, extremesResponse, forecastResponse] = await Promise.all([
+        const [kpiResponse, summaryResponse, trendResponse, extremesResponse, forecastResponse, forecastTrendResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/kpis?${baseQuery}`),
           fetch(`${API_BASE_URL}/neighborhood-summary?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
           fetch(`${API_BASE_URL}/trend?${baseQuery}`),
           fetch(`${API_BASE_URL}/extremes?${baseQuery}`),
           fetch(`${API_BASE_URL}/forecast?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
+          fetch(`${API_BASE_URL}/forecast-trend?start_year=${filters.startYear}&end_year=${filters.endYear}${filters.neighborhoodNumber ? `&neighborhood_number=${filters.neighborhoodNumber}` : ''}`),
         ])
-        const [kpiPayload, summaryPayload, trendPayload, extremesPayload, forecastPayload] = await Promise.all([
+        const [kpiPayload, summaryPayload, trendPayload, extremesPayload, forecastPayload, forecastTrendPayload] = await Promise.all([
           kpiResponse.json(),
           summaryResponse.json(),
           trendResponse.json(),
           extremesResponse.json(),
           forecastResponse.json(),
+          forecastTrendResponse.json(),
         ])
         setKpis(kpiPayload)
         setSummaryRows(summaryPayload)
         setTrendRows(trendPayload)
         setExtremes(extremesPayload)
         setForecastRows(forecastPayload)
+        setForecastTrendRows(forecastTrendPayload)
         if (selectedCategory && filters.neighborhoodNumber && selectedCategoryYear) {
           const categoryTrendResponse = await fetch(`${API_BASE_URL}/category-count-trend?category=${encodeURIComponent(selectedCategory)}&start_year=${selectedCategoryYear}&end_year=${selectedCategoryYear}&neighborhood_number=${filters.neighborhoodNumber}`)
           const categoryTrendPayload = await categoryTrendResponse.json()
@@ -450,17 +474,6 @@ function App() {
   function updateFilter(key, value) {
     setFilters((previous) => ({ ...previous, [key]: value }))
   }
-
-  const forecastTrendRows = useMemo(() => {
-    const byMonthMap = new Map()
-    forecastRows.forEach((row) => {
-      const monthKey = row.month_start
-      const priorValue = byMonthMap.get(monthKey) || { month_start: monthKey, predict_crime_count: 0 }
-      priorValue.predict_crime_count += Number(row.predict_crime_count || 0)
-      byMonthMap.set(monthKey, priorValue)
-    })
-    return Array.from(byMonthMap.values()).sort((left, right) => left.month_start.localeCompare(right.month_start))
-  }, [forecastRows])
 
   const selectedMapMonth = mapMonths[mapMonthIndex] || null
   const selectedMapRows = useMemo(
