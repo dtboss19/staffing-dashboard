@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -8,8 +9,14 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATABASE_PATH = PROJECT_ROOT / "staffing_analytics.db"
+BACKEND_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_DIR.parent
+DATABASE_PATH = Path(
+    os.getenv(
+        "STAFFING_DB_PATH",
+        str(BACKEND_DIR / "staffing_analytics.db"),
+    )
+)
 
 app = FastAPI(title="Staffing Dashboard API", version="1.0.0")
 
