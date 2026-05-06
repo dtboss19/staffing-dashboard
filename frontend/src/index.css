@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f2f5f9;
+  color: #1f2937;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
