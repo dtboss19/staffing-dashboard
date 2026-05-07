@@ -1,8 +1,13 @@
 body {
   margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f2f5f9;
-  color: #1f2937;
+  font-family: Inter, "Segoe UI Variable", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background:
+    radial-gradient(1200px 700px at 10% -10%, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0) 55%),
+    radial-gradient(1000px 600px at 90% 0%, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0) 55%),
+    #020617;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #root {

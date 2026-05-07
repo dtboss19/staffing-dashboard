@@ -237,6 +237,7 @@ function ForecastTrendChart({ rows }) {
   const hoveredActualY = hoveredRow && hoveredRow.actual_total_count !== null && hoveredRow.actual_total_count !== undefined
     ? toY(hoveredRow.actual_total_count)
     : null
+  const hoveredRowHasActual = hoveredRow && hoveredRow.actual_total_count !== null && hoveredRow.actual_total_count !== undefined
 
   return (
     <div className="trend-wrapper">
@@ -276,7 +277,7 @@ function ForecastTrendChart({ rows }) {
         })}
         {actualPathData ? <path d={actualPathData} className="forecast-actual-line" /> : null}
         <path d={pathData} className="forecast-line" />
-        {hoveredRow ? (
+        {hoveredRowHasActual ? (
           <g>
             <line x1={hoveredX} y1={padding} x2={hoveredX} y2={height - padding} className="hover-line" />
             <circle cx={hoveredX} cy={hoveredPredictedY} r="4" className="hover-dot forecast-dot" />
@@ -285,11 +286,11 @@ function ForecastTrendChart({ rows }) {
         ) : null}
         <text x={padding} y={16} className="chart-title">Forecasted Crime Count Trend</text>
       </svg>
-      {hoveredRow ? (
+      {hoveredRowHasActual ? (
         <div className="chart-tooltip">
           <div>{formatDateLabel(hoveredRow.month_start)}</div>
           <div>Predicted: {formatNumber(hoveredRow.predicted_total_count, 2)}</div>
-          <div>Actual: {hoveredRow.actual_total_count !== null && hoveredRow.actual_total_count !== undefined ? formatNumber(hoveredRow.actual_total_count, 2) : 'N/A'}</div>
+          <div>Actual: {formatNumber(hoveredRow.actual_total_count, 2)}</div>
         </div>
       ) : null}
       <div className="trend-legend">
@@ -367,6 +368,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedCategoryYear, setSelectedCategoryYear] = useState('')
   const [categoryTrendRows, setCategoryTrendRows] = useState([])
+  const [allCategoryTrendRows, setAllCategoryTrendRows] = useState([])
   const [extremes, setExtremes] = useState(null)
   const [forecastRows, setForecastRows] = useState([])
   const [forecastTrendRows, setForecastTrendRows] = useState([])
@@ -433,8 +435,15 @@ function App() {
           const categoryTrendResponse = await fetch(`${API_BASE_URL}/category-count-trend?category=${encodeURIComponent(selectedCategory)}&start_year=${selectedCategoryYear}&end_year=${selectedCategoryYear}&neighborhood_number=${filters.neighborhoodNumber}`)
           const categoryTrendPayload = await categoryTrendResponse.json()
           setCategoryTrendRows(categoryTrendPayload)
+          setAllCategoryTrendRows([])
+        } else if (!selectedCategory && filters.neighborhoodNumber && selectedCategoryYear) {
+          const allCategoryTrendResponse = await fetch(`${API_BASE_URL}/category-all-count-trend?start_year=${selectedCategoryYear}&end_year=${selectedCategoryYear}&neighborhood_number=${filters.neighborhoodNumber}`)
+          const allCategoryTrendPayload = await allCategoryTrendResponse.json()
+          setAllCategoryTrendRows(allCategoryTrendPayload)
+          setCategoryTrendRows([])
         } else {
           setCategoryTrendRows([])
+          setAllCategoryTrendRows([])
         }
       } catch (error) {
         setErrorMessage('Failed to query dashboard endpoints.')
@@ -479,6 +488,27 @@ function App() {
   const selectedMapRows = useMemo(
     () => mapRows.filter((row) => row.month_start === selectedMapMonth),
     [mapRows, selectedMapMonth],
+  )
+  const allCategoryRows = useMemo(
+    () => allCategoryTrendRows
+      .map((row) => {
+        const actualTotal = Number(row.actual_narcotic_count || 0)
+          + Number(row.actual_property_damage_count || 0)
+          + Number(row.actual_property_theft_count || 0)
+          + Number(row.actual_violent_person_count || 0)
+          + Number(row.actual_weapons_count || 0)
+        const absoluteErrorTotal = Math.abs(Number(row.actual_narcotic_count || 0) - Number(row.predict_narcotic_count || 0))
+          + Math.abs(Number(row.actual_property_damage_count || 0) - Number(row.predict_property_damage_count || 0))
+          + Math.abs(Number(row.actual_property_theft_count || 0) - Number(row.predict_property_theft_count || 0))
+          + Math.abs(Number(row.actual_violent_person_count || 0) - Number(row.predict_violent_person_count || 0))
+          + Math.abs(Number(row.actual_weapons_count || 0) - Number(row.predict_weapons_count || 0))
+        return {
+          ...row,
+          ape_5_category_pct: actualTotal > 0 ? (absoluteErrorTotal * 100.0) / actualTotal : null,
+        }
+      })
+      .sort((left, right) => left.month_start.localeCompare(right.month_start)),
+    [allCategoryTrendRows],
   )
 
   return (
@@ -618,8 +648,38 @@ function App() {
             ))}
           </select>
         </div>
-        {selectedCategory && !filters.neighborhoodNumber ? (
+        {!filters.neighborhoodNumber ? (
           <p className="subtle">Select a neighborhood at the top to view category counts.</p>
+        ) : null}
+        {filters.neighborhoodNumber && selectedCategory === '' ? (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Narcotic (A vs P)</th>
+                  <th>Property Damage (A vs P)</th>
+                  <th>Property Theft (A vs P)</th>
+                  <th>Violent Person (A vs P)</th>
+                  <th>Weapons (A vs P)</th>
+                  <th>5-Category APE %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allCategoryRows.map((row) => (
+                  <tr key={`all-${row.month_start}`}>
+                    <td>{formatMonthYear(row.month_start)}</td>
+                    <td>{`${formatNumber(row.actual_narcotic_count, 2)} vs ${formatNumber(row.predict_narcotic_count, 2)}`}</td>
+                    <td>{`${formatNumber(row.actual_property_damage_count, 2)} vs ${formatNumber(row.predict_property_damage_count, 2)}`}</td>
+                    <td>{`${formatNumber(row.actual_property_theft_count, 2)} vs ${formatNumber(row.predict_property_theft_count, 2)}`}</td>
+                    <td>{`${formatNumber(row.actual_violent_person_count, 2)} vs ${formatNumber(row.predict_violent_person_count, 2)}`}</td>
+                    <td>{`${formatNumber(row.actual_weapons_count, 2)} vs ${formatNumber(row.predict_weapons_count, 2)}`}</td>
+                    <td>{formatNumber(row.ape_5_category_pct, 2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : null}
         {selectedCategory && filters.neighborhoodNumber ? (
           <div className="table-wrapper">
@@ -630,7 +690,6 @@ function App() {
                   <th>Actual Count</th>
                   <th>Predicted Count</th>
                   <th>Difference (Actual - Predicted)</th>
-                  <th>5-Category APE %</th>
                 </tr>
               </thead>
               <tbody>
@@ -640,44 +699,14 @@ function App() {
                     <td>{formatNumber(row.actual_count, 2)}</td>
                     <td>{formatNumber(row.predicted_count, 2)}</td>
                     <td>{formatNumber(Number(row.actual_count) - Number(row.predicted_count), 2)}</td>
-                    <td>{formatNumber(
-                      forecastRows.find((forecastRow) => forecastRow.month_start === row.month_start)?.ape_5_category_pct,
-                      2,
-                    )}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : selectedCategory === '' ? null : !filters.neighborhoodNumber ? null : (
           <p className="subtle">Select a category to show month-by-month actual and predicted counts.</p>
         )}
-        {filters.neighborhoodNumber ? (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Neighborhood</th>
-                  <th>5-Category APE %</th>
-                  <th>Model Hover Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forecastRows.map((row) => (
-                  <tr key={`ape-${row.month_start}-${row.neighborhood_number}`}>
-                    <td>{formatMonthYear(row.month_start)}</td>
-                    <td>{formatNeighborhoodDisplayName(row.neighborhood_name)}</td>
-                    <td title={row.category_actual_vs_predicted_hover}>
-                      {formatNumber(row.ape_5_category_pct, 2)}
-                    </td>
-                    <td title={row.category_actual_vs_predicted_hover}>Hover to view crime-type actual vs predicted counts</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
       </section>
       <section className="panel">
         <details>
@@ -688,7 +717,7 @@ function App() {
             <p>APE is the absolute percent error for total crime count at each neighborhood-month</p>
           </article>
           <article>
-            <h3>What Category WAPE means</h3>
+            <h3>What Category APE means</h3>
             <p>Category WAPE is weighted error across category counts Values over 100% mean the total miss is larger than the observed counts.</p>
           </article>
           <article>
@@ -726,7 +755,7 @@ function App() {
             </thead>
             <tbody>
               {forecastRows.map((row) => (
-                <tr key={`${row.month_start}-${row.neighborhood_number}`} title={row.category_actual_vs_predicted_hover}>
+                <tr key={`${row.month_start}-${row.neighborhood_number}`}>
                   <td>{formatMonthYear(row.month_start)}</td>
                   <td>{row.neighborhood_name}</td>
                   <td>{formatNumber(row.predict_crime_count, 2)}</td>
