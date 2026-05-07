@@ -600,6 +600,7 @@ function App() {
       </section>
       <section className="panel">
         <h2>Category Actual vs Predicted Counts</h2>
+        <p className="subtle">Includes 5-category APE% (Narcotic, Property Damage, Property Theft, Violent Person, Weapons).</p>
         <div className="filter-field category-inline">
           <label htmlFor="categoryCompare">Category</label>
           <select id="categoryCompare" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
@@ -629,6 +630,7 @@ function App() {
                   <th>Actual Count</th>
                   <th>Predicted Count</th>
                   <th>Difference (Actual - Predicted)</th>
+                  <th>5-Category APE %</th>
                 </tr>
               </thead>
               <tbody>
@@ -638,6 +640,10 @@ function App() {
                     <td>{formatNumber(row.actual_count, 2)}</td>
                     <td>{formatNumber(row.predicted_count, 2)}</td>
                     <td>{formatNumber(Number(row.actual_count) - Number(row.predicted_count), 2)}</td>
+                    <td>{formatNumber(
+                      forecastRows.find((forecastRow) => forecastRow.month_start === row.month_start)?.ape_5_category_pct,
+                      2,
+                    )}</td>
                   </tr>
                 ))}
               </tbody>
@@ -646,6 +652,32 @@ function App() {
         ) : (
           <p className="subtle">Select a category to show month-by-month actual and predicted counts.</p>
         )}
+        {filters.neighborhoodNumber ? (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Neighborhood</th>
+                  <th>5-Category APE %</th>
+                  <th>Model Hover Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forecastRows.map((row) => (
+                  <tr key={`ape-${row.month_start}-${row.neighborhood_number}`}>
+                    <td>{formatMonthYear(row.month_start)}</td>
+                    <td>{formatNeighborhoodDisplayName(row.neighborhood_name)}</td>
+                    <td title={row.category_actual_vs_predicted_hover}>
+                      {formatNumber(row.ape_5_category_pct, 2)}
+                    </td>
+                    <td title={row.category_actual_vs_predicted_hover}>Hover to view crime-type actual vs predicted counts</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
       <section className="panel">
         <details>
@@ -653,15 +685,11 @@ function App() {
           <div className="guide-grid">
           <article>
             <h3>What APE means</h3>
-            <p>APE is the absolute percent error for total crime count at each neighborhood-month: |actual - predicted| / actual * 100.</p>
+            <p>APE is the absolute percent error for total crime count at each neighborhood-month</p>
           </article>
           <article>
             <h3>What Category WAPE means</h3>
-            <p>Category WAPE is weighted error across category counts: sum(|actual - predicted|) / sum(actual) * 100. Values over 100% mean the total miss is larger than the observed counts.</p>
-          </article>
-          <article>
-            <h3>What Normalized Category Error means</h3>
-            <p>Normalized Category Error scales category absolute error by predicted total count: sum(|actual - predicted|) / sum(predicted total) * 100. Use this when you want category error on the same denominator style as total predicted workload.</p>
+            <p>Category WAPE is weighted error across category counts Values over 100% mean the total miss is larger than the observed counts.</p>
           </article>
           <article>
             <h3>How staffing score is used</h3>
@@ -691,11 +719,14 @@ function App() {
                 <th>Proactive Visits</th>
                 <th>Other</th>
                 <th>Staffing Score</th>
+                <th>5-Category APE %</th>
+                <th>Staffing Proportion</th>
+                <th>Allocated Staff</th>
               </tr>
             </thead>
             <tbody>
               {forecastRows.map((row) => (
-                <tr key={`${row.month_start}-${row.neighborhood_number}`}>
+                <tr key={`${row.month_start}-${row.neighborhood_number}`} title={row.category_actual_vs_predicted_hover}>
                   <td>{formatMonthYear(row.month_start)}</td>
                   <td>{row.neighborhood_name}</td>
                   <td>{formatNumber(row.predict_crime_count, 2)}</td>
@@ -707,6 +738,9 @@ function App() {
                   <td>{formatNumber(row.predict_proactive_police_visits_count, 2)}</td>
                   <td>{formatNumber(row.predict_other_count, 2)}</td>
                   <td>{formatNumber(row.staffing_strength_score_0_100, 2)}</td>
+                  <td>{formatNumber(row.ape_5_category_pct, 2)}</td>
+                  <td>{formatNumber(Number(row.neighborhood_staffing_proportion) * 100, 2)}%</td>
+                  <td>{formatNumber(row.neighborhood_allocated_staff_count, 2)}</td>
                 </tr>
               ))}
             </tbody>
