@@ -347,7 +347,23 @@ def forecast(
             staffing_strength_score_0_100,
             staffing_strength_level,
             forecast_method,
-            year_weight_policy
+            year_weight_policy,
+            Actual_Narcotic_Count AS actual_narcotic_count,
+            Actual_PropertyDamage_Count AS actual_property_damage_count,
+            Actual_PropertyTheft_Count AS actual_property_theft_count,
+            Actual_ViolentPerson_Count AS actual_violent_person_count,
+            Actual_Weapons_Count AS actual_weapons_count,
+            APE_Narcotic_Pct AS ape_narcotic_pct,
+            APE_PropertyDamage_Pct AS ape_property_damage_pct,
+            APE_PropertyTheft_Pct AS ape_property_theft_pct,
+            APE_ViolentPerson_Pct AS ape_violent_person_pct,
+            APE_Weapons_Pct AS ape_weapons_pct,
+            APE_5_Category_Pct AS ape_5_category_pct,
+            category_actual_vs_predicted_hover AS category_actual_vs_predicted_hover,
+            neighborhood_staffing_need_score AS neighborhood_staffing_need_score,
+            neighborhood_staffing_proportion AS neighborhood_staffing_proportion,
+            neighborhood_allocated_staff_count AS neighborhood_allocated_staff_count,
+            total_police_staff_pool AS total_police_staff_pool
         FROM forecast_2026_frozen
         WHERE {" AND ".join(filters)}
         ORDER BY year, month, NEIGHBORHOOD_NUMBER
