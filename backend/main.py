@@ -400,24 +400,24 @@ def forecast_trend(
         f"""
         WITH forecast_month AS (
             SELECT
-                f.month_start,
+                date(f.month_start) AS month_start,
                 SUM(f.Predict_Crime_Count) AS predicted_total_count
             FROM forecast_2026_frozen f
             WHERE {" AND ".join(forecast_filters)}
-            GROUP BY f.month_start
+            GROUP BY date(f.month_start)
         ),
         actual_monthly AS (
             SELECT
-                m.month_start,
+                date(m.month_start) AS month_start,
                 m.neighborhood_number,
                 SUM(m.actual_total_count) AS actual_total_count
             FROM monthly_neighborhood m
             WHERE {" AND ".join(actual_monthly_filters)}
-            GROUP BY m.month_start, m.neighborhood_number
+            GROUP BY date(m.month_start), m.neighborhood_number
         ),
         actual_fresh AS (
             SELECT
-                printf('%04d-%02d-01 00:00:00', t.year, t.month) AS month_start,
+                date(printf('%04d-%02d-01', t.year, t.month)) AS month_start,
                 t.NEIGHBORHOOD_NUMBER AS neighborhood_number,
                 SUM(t.actual_total) AS actual_total_count
             FROM fresh_test_monthly t
@@ -496,6 +496,41 @@ def category_count_trend(
             month_start,
             SUM({actual_column_name}) AS actual_count,
             SUM({predicted_column_name}) AS predicted_count
+        FROM monthly_neighborhood
+        WHERE {" AND ".join(filters)}
+        GROUP BY month_start
+        ORDER BY month_start
+        """,
+        tuple(parameters),
+    )
+
+
+@app.get("/category-all-count-trend")
+def category_all_count_trend(
+    start_year: int = Query(2014),
+    end_year: int = Query(2026),
+    neighborhood_number: int | None = Query(default=None),
+) -> list[dict[str, Any]]:
+    filters = ["year BETWEEN ? AND ?"]
+    parameters: list[Any] = [start_year, end_year]
+    if neighborhood_number is not None:
+        filters.append("neighborhood_number = ?")
+        parameters.append(neighborhood_number)
+
+    return run_query(
+        f"""
+        SELECT
+            month_start,
+            SUM(actual_narcotics) AS actual_narcotic_count,
+            SUM(pred_narcotics) AS predict_narcotic_count,
+            SUM(actual_property_damage) AS actual_property_damage_count,
+            SUM(pred_property_damage) AS predict_property_damage_count,
+            SUM(actual_property_theft) AS actual_property_theft_count,
+            SUM(pred_property_theft) AS predict_property_theft_count,
+            SUM(actual_violent_person) AS actual_violent_person_count,
+            SUM(pred_violent_person) AS predict_violent_person_count,
+            SUM(actual_weapons) AS actual_weapons_count,
+            SUM(pred_weapons) AS predict_weapons_count
         FROM monthly_neighborhood
         WHERE {" AND ".join(filters)}
         GROUP BY month_start
