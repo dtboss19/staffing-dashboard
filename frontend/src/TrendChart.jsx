@@ -1,6 +1,19 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { formatDateLabel, formatNumber, formatQuarterLabel } from './formatters'
 
+function downloadSVG(svgRef, filename) {
+  const svg = svgRef.current
+  if (!svg) return
+  const serializer = new XMLSerializer()
+  const blob = new Blob([serializer.serializeToString(svg)], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function TrendChart({
   rows,
   actualKey = 'actual_total_count',
@@ -93,7 +106,17 @@ function TrendChart({
 
   return (
     <div className="trend-wrapper">
-      <h3 className="panel-chart-heading">{title}</h3>
+      <div className="chart-heading-row">
+        <h3 className="panel-chart-heading">{title}</h3>
+        <button
+          type="button"
+          className="chart-download-btn"
+          onClick={() => downloadSVG(svgReference, 'trend-chart.svg')}
+          aria-label={`Download ${title} as SVG`}
+        >
+          ↓ SVG
+        </button>
+      </div>
       <svg
         ref={svgReference}
         className="trend-svg"
@@ -137,7 +160,9 @@ function TrendChart({
             <g key={`x-${rowIndex}`}>
               <line x1={xPosition} y1={height - padding} x2={xPosition} y2={height - padding + 5} className="axis" />
               <text x={xPosition} y={height - padding + 20} className="axis-label axis-label-x">
-                {isLongRange ? formatQuarterLabel(rows[rowIndex]?.month_start) : formatDateLabel(rows[rowIndex]?.month_start)}
+                {isLongRange
+                  ? formatQuarterLabel(sampledRows[rowIndex]?.month_start)
+                  : formatDateLabel(sampledRows[rowIndex]?.month_start)}
               </text>
             </g>
           )

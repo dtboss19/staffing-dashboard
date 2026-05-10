@@ -2,20 +2,15 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 
-BACKEND_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BACKEND_DIR.parent
-DATABASE_PATH = Path(
-    os.getenv(
-        "STAFFING_DB_PATH",
-        str(BACKEND_DIR / "staffing_analytics.db"),
-    )
+DB_PATH = os.getenv(
+    "DB_PATH",
+    os.path.join(os.path.dirname(__file__), "staffing_analytics.db"),
 )
 
 app = FastAPI(title="Staffing Dashboard API", version="1.0.0")
@@ -25,16 +20,17 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://dataminingfinal.vercel.app",
+        # Add any other custom Vercel URL here
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
 
 def run_query(sql_query: str, parameters: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
-    with sqlite3.connect(DATABASE_PATH) as connection:
+    with sqlite3.connect(DB_PATH) as connection:
         connection.row_factory = sqlite3.Row
         rows = connection.execute(sql_query, parameters).fetchall()
     return [dict(row) for row in rows]

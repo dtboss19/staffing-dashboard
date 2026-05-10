@@ -104,10 +104,16 @@
   border-radius: 3px;
 }
 
-.presentation-scroll-progress-track {
+/* Single sticky chrome: present controls + progress bar stay visible together while scrolling. */
+.ps-scroll-sticky-chrome {
   position: sticky;
   top: 0;
-  z-index: 6;
+  z-index: 30;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.presentation-scroll-progress-track {
   display: block;
   width: 100%;
   height: 3px;
@@ -122,6 +128,89 @@
   width: 0%;
   background: var(--purple-mid);
   transition: width 0.12s ease-out;
+}
+
+.ps-present-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ps-present-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--purple);
+  background: var(--purple);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ps-present-btn:hover {
+  background: var(--purple-mid);
+  border-color: var(--purple-mid);
+}
+
+.ps-present-btn--exit {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-2);
+}
+
+.ps-present-btn--exit:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.ps-present-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
+}
+
+.ps-mobile-section-indicator {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .ps-mobile-section-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 50;
+    padding: 0.4rem 0.85rem;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple-mid);
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
+
+  .ps-mobile-section-num {
+    color: var(--text-3);
+    font-weight: 400;
+  }
 }
 
 .presentation-scroll-sidenav {
@@ -1405,7 +1494,8 @@
     color: #111 !important;
   }
 
-  .presentation-scroll-progress-track {
+  .presentation-scroll-progress-track,
+  .ps-scroll-sticky-chrome {
     display: none !important;
   }
 
