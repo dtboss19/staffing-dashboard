@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './PresentationScroll.css'
+import jmpPropertyTheft from './assets/jmp-property-theft.png'
+import jmpTotalCrimeCount from './assets/jmp-total-crime-count.png'
 
 const NAV_ITEMS = [
   { id: 's-title', label: 'Title' },
@@ -9,6 +11,7 @@ const NAV_ITEMS = [
   { id: 's-cleansing', label: 'Cleansing' },
   { id: 's-pipeline', label: 'Pipeline' },
   { id: 's-specs', label: 'Model Specs' },
+  { id: 's-jmp-output', label: 'JMP Output' },
   { id: 's-software', label: 'Software' },
   { id: 's-results', label: 'Results' },
   { id: 's-score', label: 'Score' },
@@ -432,6 +435,38 @@ export function PresentationScroll({
                 </div>
                 <p className="ps-footnote">Each model generates monthly predictions per neighborhood — frozen and stored in SQLite for dashboard consumption.</p>
               </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="s-jmp-output" className="ps-section">
+          <div className="ps-section-inner">
+            <SectionDivider eyebrow="Models · JMP Output" h2="Bootstrap Forest Model Evidence" />
+            <div className="ps-jmp-grid">
+              <figure className="ps-jmp-frame">
+                <img
+                  className="ps-jmp-image"
+                  src={jmpTotalCrimeCount}
+                  alt="JMP Bootstrap Forest output for target_crime_count showing training R-square 0.750 and validation R-square 0.443."
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption className="ps-jmp-caption">
+                  Total Crime Count model output.
+                </figcaption>
+              </figure>
+              <figure className="ps-jmp-frame">
+                <img
+                  className="ps-jmp-image"
+                  src={jmpPropertyTheft}
+                  alt="JMP Bootstrap Forest output for target_count_category_property_theft showing training R-square 0.867 and validation R-square 0.658."
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption className="ps-jmp-caption">
+                  Property Theft model output.
+                </figcaption>
+              </figure>
             </div>
           </div>
         </section>

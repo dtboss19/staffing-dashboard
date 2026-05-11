@@ -903,6 +903,47 @@
   border: 1px solid #ddd6fe;
 }
 
+/* JMP output screenshots */
+.ps-jmp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+@media (max-width: 900px) {
+  .ps-jmp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ps-jmp-frame {
+  margin: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.ps-jmp-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(440px, 54dvh);
+  object-fit: contain;
+  background: #303030;
+  border: 1px solid #334155;
+  border-radius: 10px;
+}
+
+.ps-jmp-caption {
+  margin-top: 0.75rem;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-3);
+  text-align: center;
+}
+
 /* Software */
 .ps-soft-rows {
   display: flex;
