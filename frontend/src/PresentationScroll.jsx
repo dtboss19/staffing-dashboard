@@ -78,7 +78,12 @@ function SectionDivider({ eyebrow, h2, variant }) {
   )
 }
 
-export function PresentationScroll({ onSwitchTab = () => {}, layout = 'default' }) {
+export function PresentationScroll({
+  onSwitchTab = () => {},
+  layout = 'default',
+  presentMode = false,
+  onTogglePresentMode = () => {},
+}) {
   const scrollRef = useRef(null)
   const [progress, setProgress] = useState(0)
   const [activeSectionId, setActiveSectionId] = useState(NAV_ITEMS[0].id)
@@ -132,6 +137,25 @@ export function PresentationScroll({ onSwitchTab = () => {}, layout = 'default' 
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    function handleKey(e) {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+      e.preventDefault()
+      const currentIndex = NAV_ITEMS.findIndex((item) => item.id === activeSectionId)
+      if (currentIndex === -1) return
+      const nextIndex =
+        e.key === 'ArrowDown'
+          ? Math.min(currentIndex + 1, NAV_ITEMS.length - 1)
+          : Math.max(currentIndex - 1, 0)
+      if (nextIndex !== currentIndex) {
+        document.getElementById(NAV_ITEMS[nextIndex].id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [activeSectionId])
+
   function handleNavClick(sectionId) {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -139,7 +163,7 @@ export function PresentationScroll({ onSwitchTab = () => {}, layout = 'default' 
   return (
     <div className={`presentation-scroll-mount${layout === 'home' ? ' presentation-scroll-mount--home' : ''}`}>
     <div className="presentation-scroll-root">
-      <nav className="presentation-scroll-sidenav" aria-label="Presentation sections">
+      <nav className="presentation-scroll-sidenav" aria-label="Scroll narrative sections">
         {NAV_ITEMS.map(({ id, label }) => (
           <button
             key={id}
@@ -153,9 +177,35 @@ export function PresentationScroll({ onSwitchTab = () => {}, layout = 'default' 
         ))}
       </nav>
 
+      {presentMode && (
+        <div className="ps-mobile-section-indicator" aria-live="polite">
+          <span className="ps-mobile-section-num">
+            {NAV_ITEMS.findIndex((i) => i.id === activeSectionId) + 1} / {NAV_ITEMS.length}
+          </span>
+          <span className="ps-mobile-section-label">
+            {NAV_ITEMS.find((i) => i.id === activeSectionId)?.label || ''}
+          </span>
+        </div>
+      )}
+
       <div ref={scrollRef} className="presentation-scroll-viewport">
-        <div className="presentation-scroll-progress-track" aria-hidden>
-          <div className="presentation-scroll-progress-fill" style={{ width: `${progress}%` }} />
+        <div className="ps-scroll-sticky-chrome">
+          <div className="ps-present-bar">
+            <button
+              type="button"
+              className={`ps-present-btn ${presentMode ? 'ps-present-btn--exit' : ''}`}
+              onClick={onTogglePresentMode}
+              aria-label={presentMode ? 'Exit present mode' : 'Enter present mode'}
+            >
+              {presentMode ? '✕ Exit Present' : '▶ Present'}
+            </button>
+            {presentMode && (
+              <span className="ps-present-hint">Scroll or use ↑ ↓ to move between sections</span>
+            )}
+          </div>
+          <div className="presentation-scroll-progress-track" aria-hidden>
+            <div className="presentation-scroll-progress-fill" style={{ width: `${progress}%` }} />
+          </div>
         </div>
 
         <section id="s-title" className="ps-section ps-section--hero">
@@ -364,7 +414,9 @@ export function PresentationScroll({ onSwitchTab = () => {}, layout = 'default' 
                     <tr><th scope="row">Software</th><td>JMP Pro</td></tr>
                   </tbody>
                 </table>
-                <p className="ps-footnote">Same explanatory variables for all models — month, year, neighborhood census tract count, POIs.</p>
+                <p className="ps-footnote">
+                  Same explanatory variables for all models — month, year, neighborhood census tract count, POIs. Separate targets mirror SPD reporting buckets so severity-weighted staffing can respond to violent, weapon, theft, damage, narcotic, proactive, other, and total demand instead of collapsing everything into a single count.
+                </p>
               </article>
               <article className="ps-card">
                 <h3 className="ps-card-title">8 Separate Target Models</h3>

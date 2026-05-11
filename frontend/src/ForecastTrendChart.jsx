@@ -1,6 +1,19 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { formatDateLabel, formatNumber } from './formatters'
 
+function downloadSVG(svgRef, filename) {
+  const svg = svgRef.current
+  if (!svg) return
+  const serializer = new XMLSerializer()
+  const blob = new Blob([serializer.serializeToString(svg)], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function ForecastTrendChart({ rows, chartAriaLabel = 'Forecasted crime count trend chart' }) {
   const originalRowCount = rows.length
   const sampledRows = useMemo(() => {
@@ -82,7 +95,17 @@ function ForecastTrendChart({ rows, chartAriaLabel = 'Forecasted crime count tre
 
   return (
     <div className="trend-wrapper">
-      <h3 className="panel-chart-heading">Forecasted Crime Count Trend</h3>
+      <div className="chart-heading-row">
+        <h3 className="panel-chart-heading">Forecasted Crime Count Trend</h3>
+        <button
+          type="button"
+          className="chart-download-btn"
+          onClick={() => downloadSVG(svgReference, 'forecast-trend.svg')}
+          aria-label="Download forecasted crime count trend as SVG"
+        >
+          ↓ SVG
+        </button>
+      </div>
       <svg
         ref={svgReference}
         className="trend-svg"
