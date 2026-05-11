@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import './Presentation.css'
+import jmpTotalCrimeCount from './assets/jmp-total-crime-count.png'
+import jmpPropertyTheft from './assets/jmp-property-theft.png'
 
 // ─── SLIDE 1: TITLE ──────────────────────────────────────────────────────────
 function SlideTitle() {
@@ -256,6 +258,45 @@ function SlideModelSpecs() {
         </div>
       </div>
     </div>
+  )
+}
+
+function ModelScreenshotSlide({ eyebrow, title, imageSrc, imageAlt, caption }) {
+  return (
+    <div className="slide">
+      <div className="slide-header">
+        <p className="slide-eyebrow">{eyebrow}</p>
+        <h2 className="slide-title-text">{title}</h2>
+      </div>
+      <figure className="jmp-screenshot-frame slide-body">
+        <img className="jmp-screenshot" src={imageSrc} alt={imageAlt} loading="eager" decoding="async" />
+        <figcaption className="jmp-screenshot-caption">{caption}</figcaption>
+      </figure>
+    </div>
+  )
+}
+
+function SlideJmpTotalCrimeCount() {
+  return (
+    <ModelScreenshotSlide
+      eyebrow="Models · JMP Output"
+      title="Bootstrap Forest · Total Crime Count"
+      imageSrc={jmpTotalCrimeCount}
+      imageAlt="JMP Bootstrap Forest output for target_crime_count showing training R-square 0.750 and validation R-square 0.443."
+      caption="Bootstrap Forest model output for the total crime count target."
+    />
+  )
+}
+
+function SlideJmpPropertyTheft() {
+  return (
+    <ModelScreenshotSlide
+      eyebrow="Models · JMP Output"
+      title="Bootstrap Forest · Property Theft"
+      imageSrc={jmpPropertyTheft}
+      imageAlt="JMP Bootstrap Forest output for target_count_category_property_theft showing training R-square 0.867 and validation R-square 0.658."
+      caption="Bootstrap Forest model output for the property theft target."
+    />
   )
 }
 
@@ -571,6 +612,8 @@ const SLIDES = [
   { Component: SlideCleansing,   label: 'Cleansing' },
   { Component: SlidePipeline,    label: 'Pipeline' },
   { Component: SlideModelSpecs,  label: 'Models' },
+  { Component: SlideJmpTotalCrimeCount, label: 'Total Count JMP' },
+  { Component: SlideJmpPropertyTheft, label: 'Property Theft JMP' },
   { Component: SlideSoftware,    label: 'Software' },
   { Component: SlidePolicyResults, label: 'Policy Results' },
   { Component: SlideScore,       label: 'Score' },

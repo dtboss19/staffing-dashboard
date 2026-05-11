@@ -523,6 +523,32 @@
   flex-shrink: 0;
 }
 
+/* ─── JMP SCREENSHOTS ─────────────────────────────────────────────────── */
+.jmp-screenshot-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0;
+  max-width: 1120px;
+}
+
+.jmp-screenshot {
+  width: 100%;
+  max-height: min(58vh, 580px);
+  object-fit: contain;
+  background: #2f2f2f;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.jmp-screenshot-caption {
+  color: #94a3b8;
+  font-size: 0.86rem;
+  text-align: center;
+}
+
 /* ─── SOFTWARE STACK ──────────────────────────────────────────────────── */
 .stack-flow {
   display: flex;
